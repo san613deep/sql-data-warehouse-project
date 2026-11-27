@@ -1,153 +1,158 @@
-# Data Warehouse and Analytics Project
+# SQL Server Data Warehouse & Analytics
 
-This repository contains my **Data Warehouse and Analytics project** built using **SQL Server**.
+A SQL Server data-warehouse project that integrates CRM and ERP source files, loads a Bronze layer, cleans and standardizes data in Silver, and builds a Gold dimensional model for analytical queries.
 
-The goal of this project is to take raw data from different systems, clean and transform it, and build a **data warehouse that can be used for analytics and reporting**.
+## Architecture
 
-Through this project, I practiced concepts like **ETL pipelines, data modeling, and data warehouse architecture**.
-
----
-
-# Data Architecture
-
-The project follows the **Medallion Architecture**, which consists of three layers:
-
-## Bronze Layer
-- Stores **raw data exactly as it comes from the source systems**
-- Data is loaded from **CSV files into SQL Server tables**
-- No transformations are applied in this layer
-
-## Silver Layer
-- This layer contains **cleaned and standardized data**
-- Main tasks performed:
-  - Removing duplicates
-  - Handling missing values
-  - Fixing data formats
-  - Standardizing inconsistent values
-
-## Gold Layer
-- Contains **business-ready data**
-- Data is structured using a **Star Schema**
-- Used for **analytics, reporting, and dashboards**
-
----
-
-# Project Overview
-
-In this project I worked on the following steps:
-
-## 1. Data Architecture
-Designed a **data warehouse using Bronze, Silver, and Gold layers**.
-
-## 2. ETL Pipelines
-Built **ETL pipelines using SQL stored procedures** to move data from **Bronze → Silver → Gold**.
-
-## 3. Data Modeling
-Created **fact and dimension tables** using a **Star Schema** for analytical queries.
-
-## 4. Analytics & Reporting
-Wrote SQL queries to analyze:
-- Customer behavior
-- Product performance
-- Sales trends
-
----
-
-# Skills Demonstrated
-
-Through this project I practiced:
-
-- SQL Development  
-- Data Warehousing Concepts  
-- ETL Pipeline Development  
-- Data Cleaning and Transformation  
-- Star Schema Data Modeling  
-- Analytical SQL Queries  
-
----
-
-# Tools Used
-
-The following tools were used in this project:
-
-- **SQL Server Express** – used for creating the data warehouse
-- **SQL Server Management Studio (SSMS)** – used to run SQL queries and manage the database
-- **Git & GitHub** – for version control and project sharing
-- **Draw.io** – for creating architecture and data flow diagrams
-
----
-
-# Dataset
-
-The dataset used in this project comes from two source systems:
-
-- **CRM System**
-- **ERP System**
-
-Both datasets are provided as **CSV files** and can be found in the `datasets/` folder.
-
----
-
-# Project Requirements
-
-## Data Engineering
-
-The objective was to build a **data warehouse that integrates data from CRM and ERP systems**.
-
-Steps included:
-
-- Importing data from CSV files
-- Cleaning and transforming the data
-- Integrating multiple data sources
-- Creating a structured data model for analytics
-
----
-
-## Analytics
-
-After building the warehouse, SQL queries were used to analyze:
-
-- Customer information
-- Product categories
-- Sales performance
-- Revenue trends
-
----
-
-# Repository Structure
-
-```
-data-warehouse-project/
-│
-├── datasets/               # Raw CRM and ERP datasets (CSV files)
-│
-├── scripts/                # SQL scripts for ETL and transformations
-│   ├── bronze/             # Scripts for loading raw data
-│   ├── silver/             # Data cleaning and transformation
-│   ├── gold/               # Analytical models and views
-│
-├── tests/                  # Data validation and testing scripts
-│
-├── README.md               # Project documentation
-├── LICENSE
-├── .gitignore
-├── requirements.txt
+```text
+CRM CSV files       ERP CSV files
+     |                   |
+     +---------+---------+
+               |
+               v
+       BRONZE (raw landing)
+               |
+               v
+       SILVER (cleaned / standardized)
+               |
+               v
+       GOLD (dimensions + fact_sales)
+               |
+               v
+       Analytical SQL queries
 ```
 
----
+The project uses a medallion-style architecture and SQL Server stored procedures for the Bronze and Silver load processes. Gold tables are designed for reporting and dimensional analysis.
 
-# What I Learned
+## Technology
 
-This project helped me understand:
+- Microsoft SQL Server
+- SQL Server Management Studio (SSMS)
+- T-SQL stored procedures and views
+- CSV source datasets
+- Git / GitHub
 
-- How **real-world data warehouses are structured**
-- How **ETL pipelines work**
-- How to clean and standardize messy data
-- How to design **fact and dimension tables**
-- How to write SQL queries for business insights
+## Repository layout
 
----
+```text
+datasets/
+  source_crm/
+  source_erp/
+scripts/
+  init_database.sql
+  bronze/
+    ddl_bronze.sql
+    proc_load_bronze.sql
+  silver/
+    ddl_silver.sql
+    proc_load_silver.sql
+  gold/
+    ddl_gold.sql
+tests/
+  quality_checks_silver.sql
+  quality_checks_gold.sql
+README.md
+```
 
-# License
+## Prerequisites
 
-This project is licensed under the **MIT License**.
+- SQL Server 2019 or later (SQL Server Express is suitable for local learning).
+- SQL Server Management Studio.
+- Permission for the SQL Server service account to read the CSV files.
+- The repository datasets downloaded to a local directory.
+
+## Setup and execution
+
+### 1. Clone the repository
+
+```powershell
+git clone https://github.com/san613deep/sql-data-warehouse-project.git
+cd sql-data-warehouse-project
+```
+
+### 2. Initialize the database
+
+Open `scripts/init_database.sql` in SSMS and execute it against your SQL Server instance.
+
+### 3. Create the Bronze schema tables
+
+Execute `scripts/bronze/ddl_bronze.sql`.
+
+### 4. Configure the source data path
+
+The Bronze load procedure uses the SQLCMD variable `$(DataRoot)` instead of a developer-specific Windows path.
+
+In SSMS:
+1. Open `scripts/bronze/proc_load_bronze.sql`.
+2. Enable **Query → SQLCMD Mode**.
+3. Add or execute the following SQLCMD setting after replacing the path with your local repository directory:
+
+```sql
+:setvar DataRoot "C:\\path\\to\\sql-data-warehouse-project"
+```
+
+The folder should contain the `datasets/` directory. The SQL Server Database Engine service account must have read access to those CSV files; access from your Windows user account alone is not sufficient.
+
+Execute the Bronze procedure script to create `bronze.load_bronze`, then run:
+
+```sql
+EXEC bronze.load_bronze;
+```
+
+Alternatively, run the script with `sqlcmd` and pass `-v DataRoot="C:\\path\\to\\sql-data-warehouse-project"`.
+
+### 5. Create and load the Silver layer
+
+Execute the following in order:
+
+1. `scripts/silver/ddl_silver.sql`
+2. `scripts/silver/proc_load_silver.sql`
+
+Then run:
+
+```sql
+EXEC silver.load_silver;
+```
+
+### 6. Create the Gold layer
+
+Execute `scripts/gold/ddl_gold.sql` to create the dimensional model.
+
+### 7. Run data-quality checks
+
+After the loads, execute:
+
+- `tests/quality_checks_silver.sql`
+- `tests/quality_checks_gold.sql`
+
+The scripts contain diagnostic queries. For checks documented as “Expectation: No Results”, investigate any returned rows before relying on the warehouse for reporting. Some standardization queries intentionally return distinct values for manual review rather than asserting zero rows.
+
+## Data model
+
+The Gold layer contains customer and product dimensions and a sales fact table. The fact table links to dimensions using surrogate keys, enabling customer, product and sales analysis.
+
+## Example analytical questions
+
+- Which products and categories contribute the most sales?
+- How does revenue vary by customer and product?
+- Which customers have the highest purchase activity?
+- Are fact rows missing valid dimension references?
+
+## Important implementation notes
+
+- The Bronze procedure truncates and reloads its target tables. Treat it as a batch reload, not an incremental CDC pipeline.
+- SQL Server reads files from the database server's filesystem context. The configured path must be accessible to the SQL Server service account.
+- The SQL quality-check scripts are manually executed diagnostic queries; they are not an automated CI test suite.
+- This is a portfolio and learning implementation. Validate schema changes and row-level results on a disposable database before re-running scripts against important data.
+
+## Future improvements
+
+- Add a repeatable local SQL Server container or documented SQL Server Developer setup.
+- Convert diagnostic queries into automated assertions that fail on unexpected rows.
+- Add row-count reconciliation between Bronze, Silver and Gold.
+- Add incremental load support and audit metadata.
+- Add Power BI dashboards with screenshots and documented measures.
+
+## License
+
+See the repository `LICENSE` file for reuse terms.
